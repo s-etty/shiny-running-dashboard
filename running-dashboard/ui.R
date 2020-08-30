@@ -1,24 +1,15 @@
 library(shiny)
+library(leaflet)
 
-# Define UI for application that draws a histogram
 shinyUI(fluidPage(
-
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-            plotOutput("distPlot")
-        )
-    )
+    theme = "styles.css",
+    fluidRow(class = "header-navbar",
+        column(4,
+               p("sidebar expand button")),
+        column(4, id = "page-title",
+                h1(class = "header-navbar", "Run Dash")),
+        column(4, id = "user-profile-header",
+               p("user profile button"))
+    ),
+    fluidRow(class = "latest-track")
 ))

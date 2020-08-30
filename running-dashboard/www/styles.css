@@ -1,0 +1,16 @@
+body {
+  background-color: #2B2E32;
+}
+
+.header-navbar{
+  color:white;
+  font-size:20px;
+}
+
+#page-title{
+  text-align:center;
+}
+
+#user-profile-header{
+  text-align:right;
+}
