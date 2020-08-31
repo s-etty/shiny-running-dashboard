@@ -15,3 +15,4 @@ Of course, as this is a new skill for me, I will be using a lot of resources to 
 - [Reading Multiple CSV](https://www.gerkelab.com/blog/2018/09/import-directory-csv-purrr-readr/)
 - [Creating Leaflet Maps in Shiny](https://rstudio.github.io/leaflet/shiny.html)
 - [Working with Lat/Long Data](https://cran.r-project.org/web/packages/geosphere/geosphere.pdf)
+- [Filtering by Date in Shiny](https://stackoverflow.com/questions/49848841/filtering-by-date-in-shiny)
