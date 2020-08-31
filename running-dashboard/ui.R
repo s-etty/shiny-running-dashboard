@@ -11,5 +11,11 @@ shinyUI(fluidPage(
         column(4, id = "user-profile-header",
                p("user profile button"))
     ),
-    fluidRow(class = "latest-track")
+    fluidRow(class = "latest-track",
+             column(2, 
+                    dateInput("date", label = h3("Select a Date"), value = today())),
+             column(10, 
+                    leafletOutput("mymap"))
+                    
+    )
 ))
