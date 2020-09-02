@@ -14,11 +14,7 @@ shinyUI(fluidPage(
     ),
     fluidRow(class = "track-map",
              column(2, 
-                    dateInput("date", label = h5("Select a Date"), 
-                              value = "2020-08-27")),
-                              #value = most_recent_date,
-                              #min = min_date, max = most_recent_date,
-                              #datesdisabled = disabled_dates$value)),
+                    uiOutput("date_input")),
              #need to figure out how to disable all dates except those specified
              column(10, 
                     leafletOutput("mymap"))
