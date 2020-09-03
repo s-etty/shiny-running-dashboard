@@ -1,9 +1,9 @@
 body {
-  background-color: #2B2E32;
+  background-color: #242729;
 }
 
 .header-navbar{
-  color:white;
+  color:#f0ebd8;
   font-size:20px;
 }
 
@@ -16,5 +16,9 @@ body {
 }
 
 .track-map{
-  color:white;
+  color:#f0ebd8;
+}
+
+hr {
+  border: 1px solid #2d2f30;
 }

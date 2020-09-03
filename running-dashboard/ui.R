@@ -20,8 +20,9 @@ shinyUI(fluidPage(
                     leafletOutput("mymap"))
                     
     ),
+    hr(),
     fluidRow(class = "track-stats",
              column(8,
-                    plotlyOutput("elevation"))
+                    plotlyOutput("elevation_speed"))
     )
 ))
