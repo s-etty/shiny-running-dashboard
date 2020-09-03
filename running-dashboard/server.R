@@ -66,7 +66,6 @@ disabled_dates <- anti_join(x = as_tibble(possible_dates), y = as_tibble(recorde
     pull(value)
 #anti-join the possible dates with dates actually recorded
 
-
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
     output$date_input <- renderUI({
@@ -148,6 +147,23 @@ shinyServer(function(input, output) {
             elevation_speed <- subplot(elevation_plot, speed_plot,
                                        nrows = 2, shareX = TRUE,
                                        titleY = TRUE)
+        }
+    })
+    
+    output$current_summary_stats <- renderPrint({
+        if(!is.null(input$date)){
+            points <- tracks %>%
+                filter(date(track_timestamp) == input$date) %>%
+                mutate(elevation_change = lead(elevation) - elevation) %>%
+                summarize(total_distance = sum(distance, na.rm = TRUE),
+                          avg_speed = total_distance / (max(as.integer(runtime)) / 60),
+                          max_speed = max(speed, na.rm = TRUE),
+                          max_elevation = max(elevation, na.rm = TRUE),
+                          vertical_gain = sum(elevation_change > 0, na.rm = TRUE),
+                          total_runtime = max(runtime, na.rm = TRUE)
+                )
+            points
+            #the vertical gain is not working
         }
     })
 })
