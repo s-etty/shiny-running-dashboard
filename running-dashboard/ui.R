@@ -25,6 +25,6 @@ shinyUI(fluidPage(
              column(8,
                     plotlyOutput("elevation_speed")),
              column(4,
-                    verbatimTextOutput("current_summary_stats"))
+                    htmlOutput("current_summary_stats"))
     )
 ))

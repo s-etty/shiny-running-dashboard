@@ -1,5 +1,9 @@
+@import url("//fonts.googleapis.com/css?family=Noto+Sans");
+
 body {
   background-color: #242729;
+  color: #f0ebd8;
+  font-family:'Noto Sans';
 }
 
 .header-navbar{
@@ -15,10 +19,38 @@ body {
   text-align:right;
 }
 
+.datepicker{
+  color:#424242;
+}
+
+.datepicker table tbody tr td.disabled,
+.datepicker table tbody tr td.disabled:hover,
+.datepicker table tbody tr td span.disabled,
+.datepicker table tbody tr td span.disabled:hover {
+  color: #eee;
+  cursor: not-allowed;
+}
+
 .track-map{
   color:#f0ebd8;
 }
 
 hr {
   border: 1px solid #2d2f30;
+}
+
+.summary-stats{
+  text-align:left;
+}
+
+.stats{
+  color:white;
+  font-size:30px;
+  margin:0;
+}
+
+.stats-descriptor{
+  color:gray;
+  font-size:20px;
+  margin:2px;
 }

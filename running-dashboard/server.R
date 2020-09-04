@@ -105,17 +105,17 @@ shinyServer(function(input, output) {
                 add_lines(name = "Elevation") %>%
                 layout(paper_bgcolor = "#242729", plot_bgcolor = "#242729",
                        xaxis = list(
-                           color = "white",
+                           color = "#f0ebd8",
                            showgrid = FALSE,
                            title = "Elapsed Runtime (min)"
                        ),
                        legend = list(
                            font = list(
-                               color = "white"
+                               color = "#f0ebd8"
                            )
                        ),
                     yaxis = list(
-                        color = "white",
+                        color = "#f0ebd8",
                         title = "Elevation (ft)",
                         showgrid = FALSE
                     )
@@ -128,17 +128,17 @@ shinyServer(function(input, output) {
                 add_lines(name = "Speed") %>%
                 layout(paper_bgcolor = "#242729", plot_bgcolor = "#242729",
                        xaxis = list(
-                           color = "white",
+                           color = "#f0ebd8",
                            showgrid = FALSE,
                            title = "Elapsed Runtime (min)"
                        ),
                        legend = list(
                            font = list(
-                               color = "white"
+                               color = "#f0ebd8"
                            )
                        ),
                        yaxis = list(
-                           color = "white",
+                           color = "#f0ebd8",
                            title = "Speed (mph)",
                            showgrid = FALSE
                        )
@@ -150,9 +150,9 @@ shinyServer(function(input, output) {
         }
     })
     
-    output$current_summary_stats <- renderPrint({
+    output$current_summary_stats <- renderUI({
         if(!is.null(input$date)){
-            points <- tracks %>%
+            summary_stats <- tracks %>%
                 filter(date(track_timestamp) == input$date) %>%
                 mutate(elevation_change = lead(elevation) - elevation) %>%
                 summarize(total_distance = sum(distance, na.rm = TRUE),
@@ -162,7 +162,29 @@ shinyServer(function(input, output) {
                           vertical_gain = sum(elevation_change > 0, na.rm = TRUE),
                           total_runtime = max(runtime, na.rm = TRUE)
                 )
-            points
+            div(class = "summary-stats",
+                h3("Session Stats"),
+                div(class = "col-sm-6",
+                    p(class = "stats", sprintf("%.2f", summary_stats$total_distance)),
+                    p(class = "stats-descriptor", "Total Miles"),
+                    br(),
+                    p(class = "stats", sprintf("%.1f", summary_stats$avg_speed)),
+                    p(class = "stats-descriptor", "Avg MPH"),
+                    br(),
+                    p(class = "stats", sprintf("%.0f", summary_stats$max_elevation)),
+                    p(class = "stats-descriptor", "Max Elevation ft")
+                ),
+                div(class = "col-sm-6",
+                    p(class = "stats", sprintf("%.1f", summary_stats$total_runtime)),
+                    p(class = "stats-descriptor", "Minutes"),
+                    br(),
+                    p(class = "stats", sprintf("%.1f", summary_stats$max_speed)),
+                    p(class = "stats-descriptor", "Max MPH"),
+                    br(),
+                    p(class = "stats", sprintf("%.0f", summary_stats$vertical_gain)),
+                    p(class = "stats-descriptor", "Vertical Gain ft")
+                )
+            )
             #the vertical gain is not working
         }
     })
