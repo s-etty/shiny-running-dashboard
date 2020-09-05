@@ -154,14 +154,21 @@ shinyServer(function(input, output) {
         if(!is.null(input$date)){
             summary_stats <- tracks %>%
                 filter(date(track_timestamp) == input$date) %>%
-                mutate(elevation_change = lead(elevation) - elevation) %>%
                 summarize(total_distance = sum(distance, na.rm = TRUE),
                           avg_speed = total_distance / (max(as.integer(runtime)) / 60),
                           max_speed = max(speed, na.rm = TRUE),
                           max_elevation = max(elevation, na.rm = TRUE),
-                          vertical_gain = sum(elevation_change > 0, na.rm = TRUE),
                           total_runtime = max(runtime, na.rm = TRUE)
                 )
+            vertical_gain <- tracks %>%
+                filter(date(track_timestamp) == input$date) %>%
+                mutate(elevation_change = lead(elevation) - elevation,
+                       track_timestamp_15s = round_date(track_timestamp, unit = "15s")) %>%
+                group_by(track_timestamp_15s) %>%
+                tidyr::drop_na(elevation_change) %>%
+                summarize(vertical_gain_15s = mean(elevation_change)) %>%
+                summarize(vertical_gain = sum(vertical_gain_15s[vertical_gain_15s > 0]))
+            
             div(class = "summary-stats",
                 h3("Session Stats"),
                 div(class = "col-sm-6",
@@ -186,7 +193,7 @@ shinyServer(function(input, output) {
                       icon("bolt", lib = "font-awesome")),
                     p(class = "stats-descriptor", "Max MPH"),
                     br(),
-                    p(class = "stats", sprintf("%.0f", summary_stats$vertical_gain),
+                    p(class = "stats", sprintf("%.0f", vertical_gain$vertical_gain),
                       icon("level-up-alt", lib = "font-awesome")),
                     p(class = "stats-descriptor", "Vertical Gain ft")
                 )
