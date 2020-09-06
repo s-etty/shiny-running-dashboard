@@ -7,29 +7,46 @@ library(geosphere)
 library(ggplot2)
 
 imperial_metric <- function(measurement, units) {
+    #convert metric to imperial
+    #the units argument is what unit the measurement was recorded in, e.g., recorded in 
+    #m/s need to go to mph
     imperial_measurement <- case_when(
         units == "m/s" ~ measurement * 2.3694,
+        #convert to mph
         units == "m" ~ measurement * 3.28084,
+        #convert to ft, useful for elevation
         units == "km" ~ measurement * 0.621371,
-        units == "meters" ~ measurement * 0.000621371 #convert from meters to miles
+        #convert to miles
+        units == "meters" ~ measurement * 0.000621371
+        #convert from meters to miles
     )
 }
 
 #read the csv files
 path <- file.path("data")
 csv_files <- fs::dir_ls(path, regexp = "\\.csv$")
+#create a fs_path object of all the csv files in the above directory (data/...)
 tracks <- csv_files %>%
     map_dfr(read_csv) %>%
+    #map the read_csv function to the fs_path object "csv_files", i.e., read all the csv's
     rename(track_timestamp = time) %>%
+    #rename the time column to track_timestamp to avoid function name conflict
     mutate(track_timestamp = with_tz(track_timestamp, tzone = Sys.timezone())) %>%
+    #add the system timezone to the timestamp, may run into issues here when deploying
+    #to a server. Will it use the server's timezone?
     mutate(elevation = imperial_metric(elevation, "m")) %>%
+    #change the elevation to ft
     mutate(speed = imperial_metric(speed, "m/s"))
+    #change the speed to mph
 
 #group the tracks by date, then generate an id for each track
 track_id_df <- tracks %>%
     mutate(track_date = date(track_timestamp)) %>%
+    #extract the date from the timestamps
     group_by(track_date) %>%
+    #group them by track dates, will not work for days with multiple workouts
     group_indices(track_date)
+    #assign an ID to each group
 
 #prepare the tracks df for display
 tracks <- tracks %>%
@@ -68,28 +85,34 @@ disabled_dates <- anti_join(x = as_tibble(possible_dates), y = as_tibble(recorde
     pull(value)
 #anti-join the possible dates with dates actually recorded
 
-# Define server logic required to draw a histogram
 shinyServer(function(input, output) {
+    #create a date selector to filter which tracks to show
     output$date_input <- renderUI({
         dateInput("date", label = h5("Select a Date"),
-                  #value = "2020-08-27",
                   value = most_recent_date,
                   min = min_date, max = most_recent_date,
                   datesdisabled = disabled_dates)
     })
     
     output$mymap <- renderLeaflet({
+        #create a map to plot the tracks onto
         if(!is.null(input$date)){
+        #because JS is asynchronous, this will load before some of the above code finishes
+        #flasing a short error message if you don't include the if statement. kind of hackey
             points <- tracks %>%
                 filter(date(track_timestamp) == input$date)
+            #filter using the date selected from the dateInput above
             leaflet() %>%
                 addProviderTiles(providers$Stamen.TonerLite) %>%
+                #tells which map tiles to use
                 addPolylines(lng = points$lon, lat = points$lat,
                              col = "#CD5C5C")
+            #plot each lat and lon as a point in the polygon
         }
     })
     
     output$elevation_speed <- renderPlotly({
+        #create the elevation and speed plots
         if(!is.null(input$date)){
             points <- tracks %>%
                 filter(date(track_timestamp) == input$date) %>%
