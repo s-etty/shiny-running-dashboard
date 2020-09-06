@@ -54,3 +54,23 @@ hr {
   font-size:20px;
   margin:2px;
 }
+
+.lifetime-stats{
+  background-color:white;
+  color:#242729;
+}
+
+.lifetime-stats-filters{
+  background-color:white;
+  color:#242729;
+}
+
+.lifetime-stats-container{
+  background-color:white;
+  color:#242729;
+}
+
+.background-bar{
+  background-color:#242729;
+  height:20px;
+}

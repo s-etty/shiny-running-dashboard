@@ -69,22 +69,21 @@ disabled_dates <- anti_join(x = as_tibble(possible_dates), y = as_tibble(recorde
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
     output$date_input <- renderUI({
-            dateInput("date", label = h5("Select a Date"),
-                      #value = "2020-08-27",
-                      value = most_recent_date,
-                      min = min_date, max = most_recent_date,
-                      datesdisabled = disabled_dates)
+        dateInput("date", label = h5("Select a Date"),
+                  #value = "2020-08-27",
+                  value = most_recent_date,
+                  min = min_date, max = most_recent_date,
+                  datesdisabled = disabled_dates)
     })
     
     output$mymap <- renderLeaflet({
         if(!is.null(input$date)){
             points <- tracks %>%
                 filter(date(track_timestamp) == input$date)
-        leaflet() %>%
-            addProviderTiles(providers$Stamen.TonerLite,
-                             options = providerTileOptions(noWrap = TRUE)
-            ) %>%
-            addPolylines(lng = points$lon, lat = points$lat)
+            leaflet() %>%
+                addProviderTiles(providers$Stamen.TonerLite) %>%
+                addPolylines(lng = points$lon, lat = points$lat,
+                             col = "#001d9c")
         }
     })
     
@@ -95,12 +94,12 @@ shinyServer(function(input, output) {
                 mutate(track_timestamp_30s = round_date(track_timestamp, unit = "30s")) %>%
                 group_by(track_timestamp_30s) %>%
                 mutate(elevation_30s = mean(elevation),
-                          speed_30s = mean(speed)) %>%
+                       speed_30s = mean(speed)) %>%
                 ungroup()
             
             elevation_plot <- plot_ly(points,
-                x = ~track_timestamp_30s,
-                y = ~elevation_30s
+                                      x = ~track_timestamp_30s,
+                                      y = ~elevation_30s
             ) %>%
                 add_lines(name = "Elevation") %>%
                 layout(paper_bgcolor = "#242729", plot_bgcolor = "#242729",
@@ -114,16 +113,16 @@ shinyServer(function(input, output) {
                                color = "#f0ebd8"
                            )
                        ),
-                    yaxis = list(
-                        color = "#f0ebd8",
-                        title = "Elevation (ft)",
-                        showgrid = FALSE
-                    )
+                       yaxis = list(
+                           color = "#f0ebd8",
+                           title = "Elevation (ft)",
+                           showgrid = FALSE
+                       )
                 )
             
             speed_plot <- plot_ly(points,
-                x = ~track_timestamp_30s,
-                y = ~speed_30s
+                                  x = ~track_timestamp_30s,
+                                  y = ~speed_30s
             ) %>%
                 add_lines(name = "Speed") %>%
                 layout(paper_bgcolor = "#242729", plot_bgcolor = "#242729",
