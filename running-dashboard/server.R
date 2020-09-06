@@ -41,8 +41,10 @@ tracks <- tracks %>%
     #drop any duplicate rows
     group_by(track_id) %>%
     #group the tracks together
-    mutate(runtime = difftime(first(track_timestamp), track_timestamp, units = "mins")) %>%
+    mutate(runtime_min = difftime(first(track_timestamp), track_timestamp, units = "mins")) %>%
     #calculate elapsed time
+    mutate(runtime_sec = difftime(first(track_timestamp), track_timestamp, units = "secs")) %>%
+    #calculate elapsed time in seconds, easier for some calculations
     mutate(nextLat = lead(lat), nextLon = lead(lon)) %>%
     #create columns for the next lat and lon to calculate distance between points
     rowwise() %>%
@@ -83,7 +85,7 @@ shinyServer(function(input, output) {
             leaflet() %>%
                 addProviderTiles(providers$Stamen.TonerLite) %>%
                 addPolylines(lng = points$lon, lat = points$lat,
-                             col = "#001d9c")
+                             col = "#CD5C5C")
         }
     })
     
@@ -154,11 +156,14 @@ shinyServer(function(input, output) {
             summary_stats <- tracks %>%
                 filter(date(track_timestamp) == input$date) %>%
                 summarize(total_distance = sum(distance, na.rm = TRUE),
-                          avg_speed = total_distance / (max(as.integer(runtime)) / 60),
+                          avg_speed = total_distance / (max(as.numeric(runtime_min)) / 60),
                           max_speed = max(speed, na.rm = TRUE),
+                          pace = (max(as.numeric(runtime_min))) / total_distance,
+                          pace = hms(chron::times(pace)/ (24 * 60)),
                           max_elevation = max(elevation, na.rm = TRUE),
-                          total_runtime = max(runtime, na.rm = TRUE)
+                          total_runtime = as.period(round(max(runtime_sec, na.rm = TRUE)))
                 )
+            
             vertical_gain <- tracks %>%
                 filter(date(track_timestamp) == input$date) %>%
                 mutate(elevation_change = lead(elevation) - elevation,
@@ -184,13 +189,17 @@ shinyServer(function(input, output) {
                     p(class = "stats-descriptor", "Max Elevation ft")
                 ),
                 div(class = "col-sm-6",
-                    p(class = "stats", sprintf("%.1f", summary_stats$total_runtime),
+                    p(class = "stats",
+                      sprintf("%02d:%02d", minute(summary_stats$total_runtime),
+                                               second(summary_stats$total_runtime)),
                       icon("stopwatch", lib = "font-awesome")),
-                    p(class = "stats-descriptor", "Minutes"),
+                    p(class = "stats-descriptor", "Runtime"),
                     br(),
-                    p(class = "stats", sprintf("%.1f", summary_stats$max_speed),
+                    p(class = "stats",
+                      sprintf("%02d:%02d", minute(summary_stats$pace),
+                              second(summary_stats$pace)),
                       icon("bolt", lib = "font-awesome")),
-                    p(class = "stats-descriptor", "Max MPH"),
+                    p(class = "stats-descriptor", "Pace Min/Mi"),
                     br(),
                     p(class = "stats", sprintf("%.0f", vertical_gain$vertical_gain),
                       icon("level-up-alt", lib = "font-awesome")),

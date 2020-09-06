@@ -39,6 +39,10 @@ hr {
   border: 1px solid #2d2f30;
 }
 
+.track-stats div{
+  padding-bottom: 60px;
+}
+
 .summary-stats{
   text-align:left;
 }
@@ -52,7 +56,6 @@ hr {
 .stats-descriptor{
   color:gray;
   font-size:20px;
-  margin:2px;
 }
 
 .lifetime-stats{
@@ -63,14 +66,12 @@ hr {
 .lifetime-stats-filters{
   background-color:white;
   color:#242729;
+  padding:10px;
 }
 
 .lifetime-stats-container{
   background-color:white;
   color:#242729;
-}
-
-.background-bar{
-  background-color:#242729;
-  height:20px;
+  margin-top:-40px;
+  padding:10px;
 }

@@ -29,26 +29,20 @@ shinyUI(fluidPage(
 
     ),
     fluidRow(class = "lifetime-stats",
-            column(9,
-                   fluidRow(class = "background-bar",
-                            div()),
+             column(1),
+             column(7,
                    fluidRow(class = "lifetime-stats-container",
                             p("here we are"),
                             p("here we are"),
-                            p("here we are"),
-                            p("here we are"),
-                            p("here we are"),
-                            p("here we are"),
-                            p("here we are"),
-                            p("here we are"),
-                            p("here we are"),
-                            p("here we are"),p("here we are"))),
+                            p("here we are")
+                            )
+            ),
+            column(1),
             column(3, class = "lifetime-stats-filters",
-                    h3("More Stats"),
-                    selectInput("lifetime_filter",
-                                label = "Select Time Window",
-                                choices = c("Week", "Month", "Year", "Lifetime"),
-                                selected = "Week")
+                            selectInput("lifetime_filter",
+                            label = "Select Time Window",
+                            choices = c("Week", "Month", "Year", "Lifetime"),
+                            selected = "Week")
                  )
-            )
+    )
 ))
