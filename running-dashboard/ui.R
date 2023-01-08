@@ -6,11 +6,11 @@ shinyUI(fluidPage(
     includeCSS("styles.css"),
     fluidRow(class = "header-navbar",
              column(4,
-                    p("sidebar expand button")),
+                    p("sidebar expand button (coming soon)")),
              column(4, id = "page-title",
                     h1(class = "header-navbar", "Run Dash")),
              column(4, id = "user-profile-header",
-                    p("user profile button"))
+                    p("user profile button (coming soon)"))
     ),
     fluidRow(class = "track-map",
              column(2, 
@@ -27,22 +27,22 @@ shinyUI(fluidPage(
              column(8,
                     plotlyOutput("elevation_speed"))
 
-    ),
-    fluidRow(class = "lifetime-stats",
-             column(1),
-             column(7,
-                   fluidRow(class = "lifetime-stats-container",
-                            p("here we are"),
-                            p("here we are"),
-                            p("here we are")
-                            )
-            ),
-            column(1),
-            column(3, class = "lifetime-stats-filters",
-                            selectInput("lifetime_filter",
-                            label = "Select Time Window",
-                            choices = c("Week", "Month", "Year", "Lifetime"),
-                            selected = "Week")
-                 )
     )
+    # fluidRow(class = "lifetime-stats",
+    #          column(1),
+    #          column(7,
+    #                fluidRow(class = "lifetime-stats-container",
+    #                         p("here we are"),
+    #                         p("here we are"),
+    #                         p("here we are")
+    #                         )
+    #         ),
+    #         column(1),
+    #         column(3, class = "lifetime-stats-filters",
+    #                         selectInput("lifetime_filter",
+    #                         label = "Select Time Window",
+    #                         choices = c("Week", "Month", "Year", "Lifetime"),
+    #                         selected = "Week")
+    #              )
+    # )
 ))

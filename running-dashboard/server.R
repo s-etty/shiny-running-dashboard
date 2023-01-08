@@ -123,7 +123,7 @@ shinyServer(function(input, output) {
                 ungroup()
             
             elevation_plot <- plot_ly(points,
-                                      x = ~track_timestamp_30s,
+                                      x = ~runtime_min,
                                       y = ~elevation_30s
             ) %>%
                 add_lines(name = "Elevation") %>%
@@ -146,7 +146,7 @@ shinyServer(function(input, output) {
                 )
             
             speed_plot <- plot_ly(points,
-                                  x = ~track_timestamp_30s,
+                                  x = ~runtime_min,
                                   y = ~speed_30s
             ) %>%
                 add_lines(name = "Speed") %>%
