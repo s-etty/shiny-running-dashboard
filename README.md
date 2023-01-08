@@ -2,10 +2,14 @@
 
 The goal of this project is to learn how to create Shiny apps, deploy them using [shinyapps.io](https://www.shinyapps.io/), store user data with a remote storage solution, and see my running progress. You can find the app [here](https://setty.shinyapps.io/running-dashboard/).
 
+See issues in this repo for things I'm still working on.
+
 ## Skills Used in this Repo
 
 - Shiny
-- NoSQL
+- Leaflet
+- Plotly
+- NoSQL (coming soon)
 
 ## References, Resources, and Learning
 
