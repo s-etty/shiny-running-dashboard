@@ -44,7 +44,6 @@ tracks <- csv_files %>%
     #change the speed to mph
     mutate(speed = imperial_metric(speed, "m/s"))
 
-timezone_test <-tz_lookup_coords(tracks$lat[1], tracks$lon[1])
 #group the tracks by date, then generate an id for each track
 track_id_df <- tracks %>%
     mutate(track_date = date(track_timestamp)) %>%
