@@ -5,40 +5,46 @@ library(purrr)
 library(lubridate)
 library(geosphere)
 library(ggplot2)
+library(lutz)
 
+# convert metric to imperial
+# the units argument is the unit the measurement was recorded in, e.g., recorded in
+# m/s need to go to mph
 imperial_metric <- function(measurement, units) {
-    #convert metric to imperial
-    #the units argument is what unit the measurement was recorded in, e.g., recorded in 
-    #m/s need to go to mph
     imperial_measurement <- case_when(
-        units == "m/s" ~ measurement * 2.3694,
         #convert to mph
-        units == "m" ~ measurement * 3.28084,
+        units == "m/s" ~ measurement * 2.3694,
         #convert to ft, useful for elevation
-        units == "km" ~ measurement * 0.621371,
+        units == "m" ~ measurement * 3.28084,
         #convert to miles
-        units == "meters" ~ measurement * 0.000621371
+        units == "km" ~ measurement * 0.621371,
         #convert from meters to miles
+        units == "meters" ~ measurement * 0.000621371
     )
 }
 
-#read the csv files
+#read the data file path and create a vector of the csv filenames
 path <- file.path("data")
 csv_files <- fs::dir_ls(path, regexp = "\\.csv$")
+
 #create a fs_path object of all the csv files in the above directory (data/...)
 tracks <- csv_files %>%
-    map_dfr(read_csv) %>%
     #map the read_csv function to the fs_path object "csv_files", i.e., read all the csv's
-    rename(track_timestamp = time) %>%
+    map_dfr(read_csv) %>%
     #rename the time column to track_timestamp to avoid function name conflict
-    mutate(track_timestamp = with_tz(track_timestamp, tzone = Sys.timezone())) %>%
-    #add the system timezone to the timestamp, may run into issues here when deploying
-    #to a server. Will it use the server's timezone?
-    mutate(elevation = imperial_metric(elevation, "m")) %>%
+    rename(track_timestamp = time) %>%
+    #use the first tracks lat and lon to define the timezone.
+    #there could be an opportunity to set the timezone for each track, but that will come later
+    #also the reason for this is because if no timezone is specified it will use the server's
+    #timezone when deployed to a shiny server and can cause errors
+    mutate(track_timestamp = with_tz(track_timestamp, 
+                                     tzone = tz_lookup_coords(lat[1], lon[1]))) %>%
     #change the elevation to ft
-    mutate(speed = imperial_metric(speed, "m/s"))
+    mutate(elevation = imperial_metric(elevation, "m")) %>%
     #change the speed to mph
+    mutate(speed = imperial_metric(speed, "m/s"))
 
+timezone_test <-tz_lookup_coords(tracks$lat[1], tracks$lon[1])
 #group the tracks by date, then generate an id for each track
 track_id_df <- tracks %>%
     mutate(track_date = date(track_timestamp)) %>%
@@ -50,40 +56,42 @@ track_id_df <- tracks %>%
 
 #prepare the tracks df for display
 tracks <- tracks %>%
-    mutate(track_id = cbind(track_id_df)) %>%
     #add a track_id column, may go away when connect to a database
-    arrange(desc(track_timestamp)) %>%
+    mutate(track_id = cbind(track_id_df)) %>%
     #sort descending date, i.e., newest at the top
-    distinct(track_timestamp, .keep_all = TRUE) %>%
+    arrange(desc(track_timestamp)) %>%
     #drop any duplicate rows
-    group_by(track_id) %>%
+    distinct(track_timestamp, .keep_all = TRUE) %>%
     #group the tracks together
-    mutate(runtime_min = difftime(first(track_timestamp), track_timestamp, units = "mins")) %>%
+    group_by(track_id) %>%
     #calculate elapsed time
-    mutate(runtime_sec = difftime(first(track_timestamp), track_timestamp, units = "secs")) %>%
+    mutate(runtime_min = difftime(first(track_timestamp), track_timestamp, units = "mins")) %>%
     #calculate elapsed time in seconds, easier for some calculations
-    mutate(nextLat = lead(lat), nextLon = lead(lon)) %>%
+    mutate(runtime_sec = difftime(first(track_timestamp), track_timestamp, units = "secs")) %>%
     #create columns for the next lat and lon to calculate distance between points
+    mutate(nextLat = lead(lat), nextLon = lead(lon)) %>%
+    #calculate distances between points
     rowwise() %>%
     mutate(distance = distVincentyEllipsoid(c(lon, lat), c(nextLon, nextLat))) %>%
-    #calculate distances between points
     ungroup() %>%
+    # convert to imperial
     mutate(distance = imperial_metric(distance, "meters"))
 
-#get the important tracks date info
-most_recent_date <- date(tracks$track_timestamp[1])
 #get the most recent recording
-recorded_dates <- unique(date(tracks$track_timestamp))
+most_recent_date <- date(tracks$track_timestamp[1])
 #get the unique recorded dates
-min_date <- min(recorded_dates)
+recorded_dates <- unique(date(tracks$track_timestamp))
 #get the min recorded date
-n_days <- interval(min_date, most_recent_date)/days(1)
+min_date <- min(recorded_dates)
 #count the number of days between oldest and most recent recording
-possible_dates <- min_date + days(0:n_days)
+n_days <- interval(min_date, most_recent_date)/days(1)
 #dates between the min and most recent
+possible_dates <- min_date + days(0:n_days)
+#anti-join the possible dates with dates actually recorded. This will be used to gray out
+# selections on the calendar picker.
 disabled_dates <- anti_join(x = as_tibble(possible_dates), y = as_tibble(recorded_dates)) %>%
     pull(value)
-#anti-join the possible dates with dates actually recorded
+
 
 shinyServer(function(input, output) {
     #create a date selector to filter which tracks to show
@@ -94,34 +102,41 @@ shinyServer(function(input, output) {
                   datesdisabled = disabled_dates)
     })
     
+    #create a map to plot the tracks onto
     output$mymap <- renderLeaflet({
-        #create a map to plot the tracks onto
-        if(!is.null(input$date)){
         #because JS is asynchronous, this will load before some of the above code finishes
         #flasing a short error message if you don't include the if statement. kind of hackey
+        if(!is.null(input$date)){
+            #filter using the date selected from the dateInput above
             points <- tracks %>%
                 filter(date(track_timestamp) == input$date)
-            #filter using the date selected from the dateInput above
+
             leaflet() %>%
-                addProviderTiles(providers$Stamen.TonerLite) %>%
                 #tells which map tiles to use
+                addProviderTiles(providers$Stamen.TonerLite) %>%
+                #plot each lat and lon as a point in the polygon
                 addPolylines(lng = points$lon, lat = points$lat,
                              col = "#CD5C5C")
-            #plot each lat and lon as a point in the polygon
         }
     })
     
+    #create the elevation and speed plots
     output$elevation_speed <- renderPlotly({
-        #create the elevation and speed plots
+        #because JS is asynchronous, this will load before some of the above code finishes
+        #flasing a short error message if you don't include the if statement. kind of hackey
         if(!is.null(input$date)){
             points <- tracks %>%
                 filter(date(track_timestamp) == input$date) %>%
+                # round the timestamp to the nearest 30s
                 mutate(track_timestamp_30s = round_date(track_timestamp, unit = "30s")) %>%
+                # group by 30s intervals
                 group_by(track_timestamp_30s) %>%
+                # get the mean elevation and speed for 30s intervals. This will hopefully smooth out the plots while still maintaining some of the resolution
                 mutate(elevation_30s = mean(elevation),
                        speed_30s = mean(speed)) %>%
                 ungroup()
             
+            # create the elevation plot
             elevation_plot <- plot_ly(points,
                                       x = ~runtime_min,
                                       y = ~elevation_30s
@@ -145,6 +160,7 @@ shinyServer(function(input, output) {
                        )
                 )
             
+            # create the speed plot
             speed_plot <- plot_ly(points,
                                   x = ~runtime_min,
                                   y = ~speed_30s
@@ -168,12 +184,14 @@ shinyServer(function(input, output) {
                        )
                 )
             
+            # put both the elevation and speed plot on the same subplot object and have them share an x axis
             elevation_speed <- subplot(elevation_plot, speed_plot,
                                        nrows = 2, shareX = TRUE,
                                        titleY = TRUE)
         }
     })
     
+    # create HTML renderings of session stats
     output$current_summary_stats <- renderUI({
         if(!is.null(input$date)){
             summary_stats <- tracks %>%
@@ -231,5 +249,9 @@ shinyServer(function(input, output) {
             )
             #the vertical gain is not working
         }
+    })
+    
+    output$timezone_test <- renderUI({
+        p(timezone_test)
     })
 })

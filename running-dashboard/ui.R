@@ -1,9 +1,17 @@
+###########################################
+#
+# The code included in this file renders the ui for this shiny app.
+# The app is used to show running statistics.
+#
+###########################################
+
 library(shiny)
 library(leaflet)
 library(plotly)
 
 shinyUI(fluidPage(
     includeCSS("styles.css"),
+    #
     fluidRow(class = "header-navbar",
              column(4,
                     p("sidebar expand button (coming soon)")),
@@ -15,7 +23,6 @@ shinyUI(fluidPage(
     fluidRow(class = "track-map",
              column(2, 
                     uiOutput("date_input")),
-             #need to figure out how to disable all dates except those specified
              column(10, 
                     leafletOutput("mymap"))
              
@@ -27,7 +34,10 @@ shinyUI(fluidPage(
              column(8,
                     plotlyOutput("elevation_speed"))
 
-    )
+    ),
+    fluidRow(class = 'testing',
+             column(12,
+                    htmlOutput("timezone_test")))
     # fluidRow(class = "lifetime-stats",
     #          column(1),
     #          column(7,
