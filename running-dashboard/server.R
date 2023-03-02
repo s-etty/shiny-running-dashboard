@@ -249,8 +249,4 @@ shinyServer(function(input, output) {
             #the vertical gain is not working
         }
     })
-    
-    output$timezone_test <- renderUI({
-        p(timezone_test)
-    })
 })
