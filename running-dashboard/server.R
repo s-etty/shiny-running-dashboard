@@ -1,3 +1,13 @@
+###########################################
+#
+# The code included in this file is the server side of this app.
+# The app is used to show running statistics from GPS tracks.
+# The app uses plotly and leaflet to render some of its visuals.
+# Data transformations and manipulations happen with tidyverse packages (dplyr, readr, purrr,
+# lubridate).
+#
+###########################################
+
 library(shiny)
 library(dplyr)
 library(readr)
@@ -92,7 +102,9 @@ disabled_dates <- anti_join(x = as_tibble(possible_dates), y = as_tibble(recorde
     pull(value)
 
 
+# call the shinyServer constructor to build the server side of the app
 shinyServer(function(input, output) {
+    
     # create a date selector to filter which tracks to show
     output$date_input <- renderUI({
         dateInput("date", label = h5("Select a Date"),
@@ -113,7 +125,7 @@ shinyServer(function(input, output) {
             leaflet() %>%
                 # tells which map tiles to use
                 addProviderTiles(providers$Stamen.TonerLite) %>%
-                # plot each lat and lon as a point in the polygon
+                # plot each lat and lon as a point in the polyline shape
                 addPolylines(lng = points$lon, lat = points$lat,
                              col = "#CD5C5C")
         }
@@ -138,6 +150,8 @@ shinyServer(function(input, output) {
                 ungroup()
             
             # create the elevation plot
+            # x axis is the elapsed time for each run
+            # y axis is the elevation at that time
             elevation_plot <- plot_ly(points,
                                       x = ~runtime_min,
                                       y = ~elevation_30s
@@ -162,6 +176,8 @@ shinyServer(function(input, output) {
                 )
             
             # create the speed plot
+            # x axis is the elapsed time for each run
+            # y axis is the speed at that time
             speed_plot <- plot_ly(points,
                                   x = ~runtime_min,
                                   y = ~speed_30s
@@ -195,29 +211,48 @@ shinyServer(function(input, output) {
     
     # create HTML renderings of session stats
     output$current_summary_stats <- renderUI({
+        # because JS is asynchronous, this will load before some of the above code finishes
+        # flasing a short error message if you don't include the if statement. kind of hackey
         if(!is.null(input$date)){
+            # calculate the session summary stats
             summary_stats <- tracks %>%
+                # filter tracks to the selected date
                 filter(date(track_timestamp) == input$date) %>%
+                # calculate summary stats
                 summarize(total_distance = sum(distance, na.rm = TRUE),
                           avg_speed = total_distance / (max(as.numeric(runtime_min)) / 60),
                           max_speed = max(speed, na.rm = TRUE),
                           pace = (max(as.numeric(runtime_min))) / total_distance,
+        ################# format the pace to look like MM:SS 
                           pace = hms(chron::times(pace)/ (24 * 60)),
                           max_elevation = max(elevation, na.rm = TRUE),
                           total_runtime = as.period(round(max(runtime_sec, na.rm = TRUE)))
                 )
             
+            ############ the vertical gain is not working
+            # calculate the total vertical gain for a session
+            # this includes all up and down movement, not just the max and min elevation difference
             vertical_gain <- tracks %>%
+                # filter tracks to the selected date
                 filter(date(track_timestamp) == input$date) %>%
-                mutate(elevation_change = lead(elevation) - elevation,
+                # get the elevation change from point to point and get a rounded time
+                # this is the current rows elevation minus the last rows elevation
+                mutate(elevation_change = elevation - lag(elevation),
                        track_timestamp_15s = round_date(track_timestamp, unit = "15s")) %>%
+                # group by 15s intervals
                 group_by(track_timestamp_15s) %>%
+                # drop na's
                 tidyr::drop_na(elevation_change) %>%
+                # get the mean elevation change for each 15s window
                 summarize(vertical_gain_15s = mean(elevation_change)) %>%
+                # sum all positve elevation changes
                 summarize(vertical_gain = sum(vertical_gain_15s[vertical_gain_15s > 0]))
             
+            # use HTML to display the session stats
             div(class = "summary-stats",
                 h3("Session Stats"),
+                # the summary stats will be written in text with some special formatting and icons
+                # this div contains the first column of session stats
                 div(class = "col-sm-6",
                     p(class = "stats", sprintf("%.2f", summary_stats$total_distance),
                       icon("ruler", lib = "font-awesome")),
@@ -225,31 +260,31 @@ shinyServer(function(input, output) {
                     br(),
                     p(class = "stats", sprintf("%.1f", summary_stats$avg_speed),
                       icon("tachometer-alt", lib = "font-awesome")),
-                    p(class = "stats-descriptor", "Avg MPH"),
+                    p(class = "stats-descriptor", "Avg Mph"),
                     br(),
                     p(class = "stats", sprintf("%.0f", summary_stats$max_elevation),
                       icon("mountain", lib = "font-awesome")),
-                    p(class = "stats-descriptor", "Max Elevation ft")
+                    p(class = "stats-descriptor", "Max Elev (ft)")
                 ),
+                # the second column of session stats
                 div(class = "col-sm-6",
                     p(class = "stats",
                       sprintf("%02d:%02d", minute(summary_stats$total_runtime),
                               second(summary_stats$total_runtime)),
                       icon("stopwatch", lib = "font-awesome")),
-                    p(class = "stats-descriptor", "Runtime"),
+                    p(class = "stats-descriptor", "Runtime (min)"),
                     br(),
                     p(class = "stats",
                       sprintf("%02d:%02d", minute(summary_stats$pace),
                               second(summary_stats$pace)),
                       icon("bolt", lib = "font-awesome")),
-                    p(class = "stats-descriptor", "Pace Min/Mi"),
+                    p(class = "stats-descriptor", "Pace (min/mi)"),
                     br(),
                     p(class = "stats", sprintf("%.0f", vertical_gain$vertical_gain),
                       icon("level-up-alt", lib = "font-awesome")),
-                    p(class = "stats-descriptor", "Vertical Gain ft")
+                    p(class = "stats-descriptor", "Vertical Gain (ft)")
                 )
             )
-            # the vertical gain is not working
         }
     })
 })

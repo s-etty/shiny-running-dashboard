@@ -1,7 +1,9 @@
 ###########################################
 #
 # The code included in this file renders the ui for this shiny app.
-# The app is used to show running statistics.
+# The app is used to show running statistics from GPS tracks.
+# It uses the fluidPage layout as opposed to shinydashboard to allow more
+# customization of the visuals. CSS is used for styling the html elements.
 #
 ###########################################
 
