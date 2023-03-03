@@ -32,8 +32,9 @@ shinyUI(fluidPage(
     # add a row for the title of the page. will be upgraded to a navbar later on.
     ############################################
     fluidRow(class = "header-navbar",
-             column(12, id = "page-title",
-                    h1(class = "header-navbar", "Run Dash"))),
+             column(2, id = "page-title",
+                    h1(class = "header-navbar", "Run Dash"))
+    ),
     ############################################
     
     # add a row for the calendar and map. these items link to the date_input and mymap

@@ -10,6 +10,7 @@ See issues in this repo for things I'm still working on.
 - Leaflet
 - Plotly
 - HTML/CSS
+- Bootstrap
 
 ## Notes About Data
 
