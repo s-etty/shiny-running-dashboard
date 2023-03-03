@@ -13,7 +13,7 @@ See issues in this repo for things I'm still working on.
 
 ## Notes About Data
 
-The data for these runs can be found in the data directory. Each csv represents a separate run.
+The data for these runs can be found in the [data directory](https://github.com/s-etty/shiny-running-dashboard/tree/master/running-dashboard/data). Each csv represents a separate run.
 
 One other thing to note. For many of these runs, the GPS settings were not optimized in the app I was using to record the data. I didn't realize it until later, but there is a setting that allows the GPS recording app to keep track of your location in between each point. This gives it *much* better accuracy, but at the expense of battery. By default it's switched off.
 
