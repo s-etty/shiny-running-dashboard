@@ -67,10 +67,16 @@ track_id_df <- tracks %>%
 tracks <- tracks %>%
     # add a track_id column, may go away when connect to a database
     mutate(track_id = cbind(track_id_df)) %>%
+    # round the timestamp to the nearest second. datetime is floating point so need to round so 
+    # grouping works otherwise precision messes with it
+    mutate(track_timestamp = round_date(track_timestamp, unit = "second")) %>%
+    # take the mean of all numeric columns when there are two rows with the same timestamp
+    # usually there are two points at the same time when one comes from gps and the other network
+    group_by(track_timestamp) %>%
+    summarize(across(where(is.numeric), mean)) %>%
+    ungroup() %>%
     # sort descending date, i.e., newest at the top
     arrange(desc(track_timestamp)) %>%
-    # drop any duplicate rows
-    distinct(track_timestamp, .keep_all = TRUE) %>%
     # group the tracks together
     group_by(track_id) %>%
     # calculate elapsed time
@@ -78,13 +84,18 @@ tracks <- tracks %>%
     # calculate elapsed time in seconds, easier for some calculations
     mutate(runtime_sec = difftime(first(track_timestamp), track_timestamp, units = "secs")) %>%
     # create columns for the next lat and lon to calculate distance between points
-    mutate(nextLat = lead(lat), nextLon = lead(lon)) %>%
+    mutate(prevLat = lag(lat), prevLon = lag(lon)) %>%
     # calculate distances between points
     rowwise() %>%
-    mutate(distance = distVincentyEllipsoid(c(lon, lat), c(nextLon, nextLat))) %>%
+    mutate(distance = distVincentyEllipsoid(c(prevLon, prevLat), c(lon, lat))) %>%
     ungroup() %>%
-    # convert to imperial
-    mutate(distance = imperial_metric(distance, "meters"))
+    # convert to imperial. Distance will be in miles
+    mutate(distance = imperial_metric(distance, "meters")) %>%
+    # create a calculated speed because the speed from the gps is inaccurate
+    mutate(time_btwn_pnts = as.numeric(difftime(lag(track_timestamp),
+                                                track_timestamp,
+                                                units = "hours")), 
+           calc_speed = distance / time_btwn_pnts)
 
 # get the most recent recording
 most_recent_date <- date(tracks$track_timestamp[1])
@@ -146,7 +157,7 @@ shinyServer(function(input, output) {
                 # hopefully smooth out the plots while still maintaining some of
                 # the resolution
                 mutate(elevation_30s = mean(elevation),
-                       speed_30s = mean(speed)) %>%
+                       speed_30s = mean(calc_speed)) %>%
                 ungroup()
             
             # create the elevation plot
@@ -187,7 +198,8 @@ shinyServer(function(input, output) {
                        xaxis = list(
                            color = "#f0ebd8",
                            showgrid = FALSE,
-                           title = "Elapsed Runtime (min)"
+                           title = "Elapsed Runtime (min)",
+                           rangemode='tozero'
                        ),
                        legend = list(
                            font = list(
