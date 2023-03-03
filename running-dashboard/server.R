@@ -235,7 +235,6 @@ shinyServer(function(input, output) {
                           avg_speed = total_distance / (max(as.numeric(runtime_min)) / 60),
                           max_speed = max(speed, na.rm = TRUE),
                           pace = (max(as.numeric(runtime_min))) / total_distance,
-        ################# format the pace to look like MM:SS 
                           pace = hms(chron::times(pace)/ (24 * 60)),
                           max_elevation = max(elevation, na.rm = TRUE),
                           total_runtime = as.period(round(max(runtime_sec, na.rm = TRUE)))
