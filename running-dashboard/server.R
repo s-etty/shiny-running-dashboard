@@ -135,7 +135,7 @@ shinyServer(function(input, output) {
             
             leaflet() %>%
                 # tells which map tiles to use
-                addProviderTiles(providers$Stamen.TonerLite) %>%
+                addProviderTiles(providers$CartoDB.Positron) %>%
                 # plot each lat and lon as a point in the polyline shape
                 addPolylines(lng = points$lon, lat = points$lat,
                              col = "#CD5C5C")
